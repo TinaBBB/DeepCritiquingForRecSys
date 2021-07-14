@@ -1,7 +1,8 @@
 from tqdm import tqdm
 from utils.reformat import to_sparse_matrix, to_svd
-
-import tensorflow as tf
+from tensorflow.compat.v1.train import AdamOptimizer
+import tensorflow.compat.v1 as tf
+tf.disable_eager_execution()
 
 
 class CEVNCF(object):
@@ -14,7 +15,7 @@ class CEVNCF(object):
                  negative_sampler,
                  lamb=0.01,
                  learning_rate=1e-4,
-                 optimizer=tf.train.AdamOptimizer,
+                 optimizer=AdamOptimizer,
                  **unused):
         self.num_users = num_users
         self.num_items = num_items
@@ -60,7 +61,7 @@ class CEVNCF(object):
 
             for i in range(self.num_layers):
                 ho = tf.layers.dense(inputs=hi, units=self.embed_dim*4,
-                                     kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self.lamb),
+                                     kernel_regularizer=tf.keras.regularizers.l2(self.lamb),
                                      activation=None)
                 hi = ho
 
@@ -75,10 +76,10 @@ class CEVNCF(object):
 
         with tf.variable_scope("prediction", reuse=False):
             rating_prediction = tf.layers.dense(inputs=self.z, units=1,
-                                                kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self.lamb),
+                                                kernel_regularizer=tf.keras.regularizers.l2(self.lamb),
                                                 activation=None, name='rating_prediction')
             keyphrase_prediction = tf.layers.dense(inputs=self.z, units=self.text_dim,
-                                                kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self.lamb),
+                                                kernel_regularizer=tf.keras.regularizers.l2(self.lamb),
                                                 activation=None, name='keyphrase_prediction')
 
             self.rating_prediction = rating_prediction
@@ -86,11 +87,11 @@ class CEVNCF(object):
 
         with tf.variable_scope("looping"):
             reconstructed_latent = tf.layers.dense(inputs=self.keyphrase_prediction, units=self.embed_dim*4,
-                                                   kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self.lamb),
+                                                   kernel_regularizer=tf.keras.regularizers.l2(self.lamb),
                                                    activation=None, name='latent_reconstruction', reuse=False)
 
             modified_latent = tf.layers.dense(inputs=self.modified_keyphrase, units=self.embed_dim*4,
-                                              # kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self.lamb),
+                                              # kernel_regularizer=tf.keras.regularizers.l2(self.lamb),
                                               activation=None, name='latent_reconstruction', reuse=True)
 
             self.modified_mean = tf.nn.relu(modified_latent)[:, :self.embed_dim*2]
@@ -100,10 +101,10 @@ class CEVNCF(object):
 
         with tf.variable_scope("prediction", reuse=True):
             rating_prediction = tf.layers.dense(inputs=modified_mean, units=1,
-                                                # kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self.lamb),
+                                                # kernel_regularizer=tf.keras.regularizers.l2(self.lamb),
                                                 activation=None, name='rating_prediction')
             keyphrase_prediction = tf.layers.dense(inputs=modified_mean, units=self.text_dim,
-                                                # kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self.lamb),
+                                                # kernel_regularizer=tf.keras.regularizers.l2(self.lamb),
                                                 activation=None, name='keyphrase_prediction')
 
             self.modified_rating_prediction = rating_prediction

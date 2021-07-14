@@ -1,8 +1,9 @@
 from tqdm import tqdm
 from utils.reformat import to_sparse_matrix, to_svd
 
-import tensorflow as tf
-
+import tensorflow.compat.v1 as tf
+tf.disable_eager_execution()
+from tensorflow.compat.v1.train import AdamOptimizer
 
 class CENCF(object):
     def __init__(self,
@@ -14,7 +15,7 @@ class CENCF(object):
                  negative_sampler,
                  lamb=0.01,
                  learning_rate=1e-4,
-                 optimizer=tf.train.AdamOptimizer,
+                 optimizer=AdamOptimizer,
                  **unused):
         self.num_users = num_users
         self.num_items = num_items
@@ -55,7 +56,7 @@ class CENCF(object):
             hi = tf.concat([users, items], axis=1)
             for i in range(self.num_layers):
                 ho = tf.layers.dense(inputs=hi, units=self.embed_dim*2,
-                                     kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self.lamb),
+                                     kernel_regularizer=tf.keras.regularizers.l2(self.lamb),
                                      activation=tf.nn.relu)
                 #hi = tf.concat([hi, ho], axis=1)
                 hi = ho
@@ -66,10 +67,10 @@ class CENCF(object):
 
         with tf.variable_scope("prediction", reuse=False):
             rating_prediction = tf.layers.dense(inputs=hi, units=1,
-                                                kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self.lamb),
+                                                kernel_regularizer=tf.keras.regularizers.l2(self.lamb),
                                                 activation=None, name='rating_prediction')
             keyphrase_prediction = tf.layers.dense(inputs=hi, units=self.text_dim,
-                                                   kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self.lamb),
+                                                   kernel_regularizer=tf.keras.regularizers.l2(self.lamb),
                                                    activation=None, name='keyphrase_prediction')
 
             self.rating_prediction = rating_prediction
@@ -77,7 +78,7 @@ class CENCF(object):
 
         with tf.variable_scope("looping"):
             reconstructed_latent = tf.layers.dense(inputs=self.keyphrase_prediction, units=self.embed_dim*2,
-                                                   kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self.lamb),
+                                                   kernel_regularizer=tf.keras.regularizers.l2(self.lamb),
                                                    activation=None, name='latent_reconstruction', reuse=False)
 
             modified_latent = tf.layers.dense(inputs=self.modified_keyphrase, units=self.embed_dim*2,

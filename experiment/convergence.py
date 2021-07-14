@@ -8,7 +8,8 @@ from utils.sampler import Negative_Sampler
 
 import json
 import pandas as pd
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_eager_execution()
 
 
 def converge(num_users, num_items, user_col, item_col, rating_col, keyphrase_vector_col, df_train, df_test, keyphrase_names, df, table_path, file_name, epoch=10):

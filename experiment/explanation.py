@@ -6,7 +6,8 @@ from utils.progress import WorkSplitter
 from utils.sampler import Negative_Sampler
 
 import pandas as pd
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_eager_execution()
 
 
 def explain(num_users, num_items, user_col, item_col, rating_col, keyphrase_vector_col, df_train, df_valid, keyphrase_names, params, load_path, save_path):

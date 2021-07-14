@@ -1,7 +1,8 @@
 from tqdm import tqdm
 from utils.reformat import to_sparse_matrix, to_svd
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_eager_execution()
 
 
 class NCF(object):
@@ -54,13 +55,13 @@ class NCF(object):
             hi = tf.concat([users, items], axis=1)
             for i in range(self.num_layers):
                 ho = tf.layers.dense(inputs=hi, units=self.embed_dim*2,
-                                     kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self.lamb),
+                                     kernel_regularizer=tf.keras.regularizers.l2(scale=self.lamb),
                                      activation=tf.nn.relu)
                 hi = ho
 
         with tf.variable_scope("prediction", reuse=False):
             rating_prediction = tf.layers.dense(inputs=hi, units=1,
-                                                kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self.lamb),
+                                                kernel_regularizer=tf.keras.regularizers.l2(scale=self.lamb),
                                                 activation=None, name='rating_prediction')
             keyphrase_prediction = tf.layers.dense(inputs=hi, units=self.text_dim,
                                                    activation=None, name='keyphrase_prediction')

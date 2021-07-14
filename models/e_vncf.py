@@ -1,8 +1,9 @@
 from tqdm import tqdm
 from utils.reformat import to_sparse_matrix, to_svd
 
-import tensorflow as tf
-
+import tensorflow.compat.v1 as tf
+tf.disable_eager_execution()
+from tensorflow.compat.v1.train import AdamOptimizer
 
 class EVNCF(object):
     def __init__(self,
@@ -14,7 +15,7 @@ class EVNCF(object):
                  negative_sampler,
                  lamb=0.01,
                  learning_rate=1e-4,
-                 optimizer=tf.train.AdamOptimizer,
+                 optimizer=AdamOptimizer,
                  **unused):
         self.num_users = num_users
         self.num_items = num_items
@@ -60,7 +61,7 @@ class EVNCF(object):
 
             for i in range(self.num_layers):
                 ho = tf.layers.dense(inputs=hi, units=self.embed_dim*4,
-                                     kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self.lamb),
+                                     kernel_regularizer=tf.keras.regularizers.l2(scale=self.lamb),
                                      activation=None)
                 hi = ho
 
@@ -73,10 +74,10 @@ class EVNCF(object):
 
         with tf.variable_scope("prediction", reuse=False):
             rating_prediction = tf.layers.dense(inputs=self.z, units=1,
-                                                kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self.lamb),
+                                                kernel_regularizer=tf.keras.regularizers.l2(scale=self.lamb),
                                                 activation=None, name='rating_prediction')
             keyphrase_prediction = tf.layers.dense(inputs=self.z, units=self.text_dim,
-                                                   kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=self.lamb),
+                                                   kernel_regularizer=tf.keras.regularizers.l2(scale=self.lamb),
                                                    activation=None, name='keyphrase_prediction')
 
             self.rating_prediction = rating_prediction
